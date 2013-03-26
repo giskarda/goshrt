@@ -48,15 +48,23 @@ func (db *Db) Get(key string) string {
 }
 
 func InitDb(filename string) *Db {
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		db, err := sqlite.Open(filename)
+		if err != nil {
+			log.Fatal("InitDb: ", err)
+		}
+		log.Println("Database doesn't exists, creating")
+		err = db.Exec("CREATE TABLE url(key STRING PRIMARY KEY NOT NULL, value TEXT NOT NULL UNIQUE);")
+		if err != nil {
+			log.Fatal("Initdb -- create table url ", err)
+		}
+		return &Db{db}
+	}
 	db, err := sqlite.Open(filename)
 	if err != nil {
 		log.Fatal("InitDb: ", err)
 	}
-
-	err = db.Exec("CREATE TABLE url(key STRING PRIMARY KEY NOT NULL, value TEXT NOT NULL UNIQUE);")
-	if err != nil {
-		log.Fatal("Initdb -- create table url ", err)
-	}
+	log.Println("Found/Load previous initilised db")
 	return &Db{db}
 }
 
