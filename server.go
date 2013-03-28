@@ -105,8 +105,10 @@ func main() {
 			value := req.Form.Get("value")
 
 			if key == "create" {
-				fmt.Fprintf(w, "I saw what you did :P")
-			} else {
+				fmt.Fprintf(w, "I saw what you did, abooooort! :P")
+			} else if strings.Contains(value, "http://go/") {
+				fmt.Fprintf(w, "I saw what you did, abooooort! :P")
+			}else {
 				db.Put(key, value)
 				http.Redirect(w, req, value, 301)
 			}
