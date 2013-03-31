@@ -152,6 +152,8 @@ func main() {
 		fmt.Fprintf(w, string(jAll))
 	}
 
+	http.Handle("/static/", http.FileServer(http.Dir("./")))
+
 	http.HandleFunc("/", get)
 	http.HandleFunc("/create", put)
 	http.HandleFunc("/listall", listall)
