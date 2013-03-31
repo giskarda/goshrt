@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
         "flag"
 	"io"
@@ -47,6 +48,35 @@ func (db *Db) Get(key string) string {
 	return value
 }
 
+func (db *Db) GetAll() map[string]string {
+	s, _ := db.Prepare("SELECT key,value from url")
+	defer s.Finalize()
+
+	all := make(map[string]string)
+	getall := func(s *sqlite.Stmt) (err error) {
+		n := s.ColumnCount()
+		for i := 0 ; i < n ; i++ {
+			var value string
+			_, err := s.ScanByIndex(i, &value)
+			if err != nil {
+				fmt.Println(err)
+				return err
+			}
+			key := value
+			all[key] = ""
+			_, err = s.ScanByIndex(i+1, &value)
+			if err != nil {
+				fmt.Println(err)
+				return err
+			}
+			all[key] = value
+			return nil
+		}
+		return nil
+	}
+	_ = s.Select(getall)
+	return all
+}
 func InitDb(filename string) *Db {
 	if _, err := os.Stat(filename); os.IsNotExist(err) {
 		db, err := sqlite.Open(filename)
@@ -104,7 +134,7 @@ func main() {
 			key := req.Form.Get("key")
 			value := req.Form.Get("value")
 
-			if key == "create" {
+			if key == "create" || key == "listall" {
 				fmt.Fprintf(w, "I saw what you did, abooooort! :P")
 			} else if strings.Contains(value, "http://go/") {
 				fmt.Fprintf(w, "I saw what you did, abooooort! :P")
@@ -116,8 +146,15 @@ func main() {
 		}
 	}
 
+	listall := func(w http.ResponseWriter, req *http.Request) {
+		allKeys := db.GetAll()
+		jAll, _ := json.Marshal(allKeys)
+		fmt.Fprintf(w, string(jAll))
+	}
+
 	http.HandleFunc("/", get)
 	http.HandleFunc("/create", put)
+	http.HandleFunc("/listall", listall)
 
         err := http.ListenAndServe(":8080", nil)
         if err != nil {
