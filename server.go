@@ -48,6 +48,21 @@ func (db *Db) Get(key string) string {
 	return value
 }
 
+func (db *Db) Delete(key string) {
+	del, err := db.Prepare("DELETE FROM url WHERE key = ?")
+	if err != nil {
+		log.Println("Error: delete failed")
+	}
+	defer del.Finalize()
+
+	_, err = del.ExecDml(key)
+	if err != nil {
+		log.Println("Error Insert: ", err)
+	}
+
+}
+
+
 func (db *Db) GetAll() map[string]string {
 	s, _ := db.Prepare("SELECT key,value from url")
 	defer s.Finalize()
@@ -108,6 +123,7 @@ func main() {
         get := func(w http.ResponseWriter, req *http.Request) {
 		key := req.URL.Path
 		key = strings.TrimLeft(key, "/")
+		req.Body.Close()
 		s := db.Get(key)
 		if s != "" {
 			http.Redirect(w,req, s, 301)
@@ -119,6 +135,7 @@ func main() {
         put := func(w http.ResponseWriter, req *http.Request) {
 		switch {
 		case req.Method == "GET": {
+			req.Body.Close()
 			file, err := os.Open("create.html")
 			if err != nil {
 				log.Println("Error: ", err)
@@ -133,8 +150,8 @@ func main() {
 
 			key := req.Form.Get("key")
 			value := req.Form.Get("value")
-
-			if key == "create" || key == "listall" {
+			req.Body.Close()
+			if key == "create" || key == "listall" || key == "delete" {
 				fmt.Fprintf(w, "I saw what you did, abooooort! :P")
 			} else if strings.Contains(value, "http://go/") {
 				fmt.Fprintf(w, "I saw what you did, abooooort! :P")
@@ -144,6 +161,11 @@ func main() {
 			}
 		}
 		}
+	}
+	delete := func(w http.ResponseWriter, req *http.Request) {
+		del := req.URL.Query().Get("short")
+		db.Delete(del)
+		http.Redirect(w,req, "https://google.com", 301)
 	}
 
 	listall := func(w http.ResponseWriter, req *http.Request) {
@@ -156,6 +178,7 @@ func main() {
 
 	http.HandleFunc("/", get)
 	http.HandleFunc("/create", put)
+	http.HandleFunc("/delete", delete)
 	http.HandleFunc("/listall", listall)
 
         err := http.ListenAndServe(":8080", nil)
