@@ -128,7 +128,7 @@ func main() {
 		if s != "" {
 			http.Redirect(w,req, s, 301)
 		} else {
-			http.Redirect(w,req, "https://google.com", 301)
+			http.Redirect(w,req, "http://go/listall", 301)
 		}
 	}
 
