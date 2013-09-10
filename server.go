@@ -176,7 +176,8 @@ func main() {
 
 	http.Handle("/static/", http.FileServer(http.Dir("./")))
 
-	http.HandleFunc("/", get)
+	http.HandleFunc("/", listall)
+	http.HandleFunc("/help", listall)
 	http.HandleFunc("/create", put)
 	http.HandleFunc("/delete", delete)
 	http.HandleFunc("/listall", listall)
