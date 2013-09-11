@@ -128,7 +128,7 @@ func main() {
 		if s != "" {
 			http.Redirect(w,req, s, 301)
 		} else {
-			http.Redirect(w,req, "http://go/listall", 301)
+			http.Redirect(w,req, "http://go/help", 301)
 		}
 	}
 
@@ -162,8 +162,9 @@ func main() {
 		}
 		}
 	}
+
 	delete := func(w http.ResponseWriter, req *http.Request) {
-		del := req.URL.Query().Get("short")
+		del := req.URL.Query().Get("key")
 		db.Delete(del)
 		http.Redirect(w,req, "https://google.com", 301)
 	}
@@ -174,10 +175,18 @@ func main() {
 		fmt.Fprintf(w, string(jAll))
 	}
 
+	help := func(w http.ResponseWriter, req *http.Request) {
+		file, err := os.Open("help.html")
+		if err != nil {
+			log.Println("Error: ", err)
+		}
+		io.Copy(w,file)
+	}
+
 	http.Handle("/static/", http.FileServer(http.Dir("./")))
 
-	http.HandleFunc("/", listall)
-	http.HandleFunc("/help", listall)
+	http.HandleFunc("/", get)
+	http.HandleFunc("/help", help)
 	http.HandleFunc("/create", put)
 	http.HandleFunc("/delete", delete)
 	http.HandleFunc("/listall", listall)
