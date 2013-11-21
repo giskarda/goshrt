@@ -3,11 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-        "flag"
 	"io"
+	"os"
+	"os/exec"
+	"strings"
+        "flag"
         "log"
         "net/http"
-	"os"
 	"strings"
 )
 
@@ -149,13 +151,17 @@ func main() {
 			}
 
 			key := req.Form.Get("key")
+			if key == "" {
+				newkey, _ := exec.Command("uuidgen").Output()
+				key = strings.Replace(string(newkey), "\n", "",-1)
+			}
 			value := req.Form.Get("value")
 			req.Body.Close()
 			if key == "create" || key == "listall" || key == "delete" {
 				fmt.Fprintf(w, "I saw what you did, abooooort! :P")
 			} else if strings.Contains(value, "http://go/") {
 				fmt.Fprintf(w, "I saw what you did, abooooort! :P")
-			}else {
+			} else {
 				db.Put(key, value)
 				http.Redirect(w, req, value, 301)
 			}
@@ -163,7 +169,7 @@ func main() {
 		}
 	}
 
-	delete := func(w http.ResponseWriter, req *http.Request) {
+	remove := func(w http.ResponseWriter, req *http.Request) {
 		del := req.URL.Query().Get("key")
 		db.Delete(del)
 		http.Redirect(w,req, "https://google.com", 301)
@@ -188,7 +194,7 @@ func main() {
 	http.HandleFunc("/", get)
 	http.HandleFunc("/help", help)
 	http.HandleFunc("/create", put)
-	http.HandleFunc("/delete", delete)
+	http.HandleFunc("/delete", remove)
 	http.HandleFunc("/listall", listall)
 
         err := http.ListenAndServe(":8080", nil)
